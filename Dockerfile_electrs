@@ -1,0 +1,18 @@
+FROM rust:latest AS builder
+
+RUN apt-get update
+RUN apt-get install -y clang cmake
+
+RUN git clone https://github.com/blockstream/electrs
+
+WORKDIR /electrs
+
+RUN cargo build --features liquid --release --bin electrs
+RUN cp /electrs/target/release/electrs /usr/bin/electrs
+
+EXPOSE 3002
+EXPOSE 60401
+
+STOPSIGNAL SIGINT
+
+ENTRYPOINT ["electrs"]

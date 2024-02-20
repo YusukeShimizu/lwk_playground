@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  elementsd:
+    image: blockstream/elementsd:22.1.1
+    restart: unless-stopped
+    command: elementsd
+    volumes:
+      - "elementsd:/root/.elements"
+      - "./elementsd/elements.conf:/root/.elements/elements.conf"
+  electrs:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_electrs
+    restart: unless-stopped
+    depends_on:
+      elementsd:
+        condition: service_started
+    volumes:
+      - "./config.toml:/etc/electrs/config.toml"
+      - "elementsd:/root/.elements"
+    environment:
+      - RUST_BACKTRACE=1
+    command:
+      - -v
+      - --network=liquidregtest
+      - --daemon-rpc-addr=elementsd:8332
+      - --electrum-rpc-addr=0.0.0.0:37040
+      - --cookie=user:pass
+      - --daemon-dir=/root/.elements
+      - --jsonrpc-import
+    ports:
+      - "37040:37040"
+  lwk:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_lwk
+    restart: unless-stopped
+    depends_on:
+      electrs:
+        condition: service_started
+    environment:
+      - RUST_BACKTRACE=1
+    command:
+      - --network=regtest
+      - --addr=0.0.0.0:32112
+      - server
+      - start
+      - --electrum-url=electrs:37040
+    ports:
+      - "32112:32112"
+volumes:
+  elementsd:
+  electrs:
+
+

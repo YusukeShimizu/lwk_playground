@@ -1,0 +1,18 @@
+FROM rust:latest AS builder
+
+RUN apt-get update
+RUN apt-get install -y clang cmake
+RUN apt-get install -y libudev-dev
+RUN apt install -y curl jq
+RUN git clone https://github.com/Blockstream/lwk
+
+WORKDIR /lwk
+
+RUN cargo build --release
+RUN cp /lwk/target/release/lwk_cli /usr/bin/lwk_cli
+
+EXPOSE 32112
+
+STOPSIGNAL SIGINT
+
+ENTRYPOINT ["lwk_cli"]
